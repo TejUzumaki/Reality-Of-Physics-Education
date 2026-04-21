@@ -101,7 +101,7 @@ SHMSim.prototype._buildGui = function () {
 
 SHMSim.prototype.update = function (t, dt) {
     if (this._st === 0) this.reset();
-    SimBase.prototype.update.call(this, t, dt);
+    if (!SimBase.prototype.update.call(this, t, dt)) return;
 
     /* Damped SHM: F = -kx - 2mγv */
     var F_spring = -this.p.k * this.y;

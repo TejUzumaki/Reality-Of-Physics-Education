@@ -1,9 +1,6 @@
 /* ============================================================
-   sims/projectile.js — Projectile Motion (Textbook Accurate)
-   FIX: Removed fake "uneven grass" ground.
-   Ground is now a perfectly flat, infinite-looking plane exactly
-   as described in ideal physics textbook diagrams.
-   - Ghost system is now fully automatic via engine.
+   sims/projectile.js — Projectile Motion 
+   TIER 1 FIX: Ground Clipping (Linear Interpolation to y=0)
    ============================================================ */
 
 function ProjSim(engine) {
@@ -19,7 +16,6 @@ ProjSim.prototype = Object.create(SimBase.prototype);
 ProjSim.prototype.constructor = ProjSim;
 
 ProjSim.prototype._setup = function () {
-    /* DAYTIME ENVIRONMENT */
     this.scene.fog = null;
     this.renderer.setClearColor(0x87CEEB, 1);
     this.engine.ambientLight.color.set(0xffffff);
@@ -33,41 +29,25 @@ ProjSim.prototype._setup = function () {
     this._add(sun);
     this._add(new THREE.HemisphereLight(0x87CEEB, 0x556B2F, 0.4));
 
-    /* 
-     * FLAT IDEAL GROUND 
-     * Removed procedural textures and vertex displacement.
-     * Function over form: A flat plane is the only way to 
-     * accurately show ideal Range (R).
-     */
     var groundGeo = new THREE.PlaneGeometry(1000, 1000);
-    var groundMat = new THREE.MeshStandardMaterial({ 
-        color: 0x5a8f4a, // Simple flat textbook green
-        roughness: 0.9, 
-        metalness: 0.0 
-    });
+    var groundMat = new THREE.MeshStandardMaterial({ color: 0x5a8f4a, roughness: 0.9, metalness: 0.0 });
     var ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2; 
-    ground.position.y = -0.05; 
-    ground.receiveShadow = true;
+    ground.rotation.x = -Math.PI / 2; ground.position.y = -0.05; ground.receiveShadow = true;
     this._add(ground);
 
-    /* Subtle Grid overlay for distance measurement */
     var gridHelper = new THREE.GridHelper(1000, 100, 0x4a7a3a, 0x4a7a3a);
     gridHelper.position.y = 0.01;
     gridHelper.material.opacity = 0.2; gridHelper.material.transparent = true;
     this._add(gridHelper);
 
-    /* Projectile */
     this._proj = this._add(new THREE.Mesh(
         new THREE.SphereGeometry(0.35),
         new THREE.MeshStandardMaterial({color: 0xff4444, metalness: 0.3, roughness: 0.4})
     ));
     this._proj.castShadow = true;
 
-    /* ASSIGN MAIN OBJECT FOR GLOBAL GHOST SYSTEM */
     this._mainObject = this._proj;
 
-    /* Trail */
     this._tGeo = new THREE.BufferGeometry();
     this._tGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.MAXTRAIL * 3), 3));
     this._tLine = this._add(new THREE.Line(this._tGeo, new THREE.LineBasicMaterial({color: 0xff4444, transparent: true, opacity: 0.5})));
@@ -110,7 +90,7 @@ ProjSim.prototype._launch = function () {
     this.vel.set(this.p.v0 * Math.cos(rad), this.p.v0 * Math.sin(rad), 0);
     this.trail = []; 
     this._tGeo.setDrawRange(0, 0); 
-    this._clearGhosts(); // Clear ghosts on new launch
+    this._clearGhosts();
     if(this._landMarker){this._landMarker.visible=false; this._landMarker=null;}
 };
 
@@ -123,16 +103,35 @@ ProjSim.prototype.update = function (t, dt) {
     }
     if (this.state === 'landed') return;
 
-    SimBase.prototype.update.call(this, t, dt); // Engine handles Ghosts automatically now!
+    if (!SimBase.prototype.update.call(this, t, dt)) return;
 
-    /* Physics */
     var rho = 1.225, vSq = this.vel.lengthSq(), vMag = Math.sqrt(vSq);
     var dragMag = 0.5 * rho * vSq * this.p.Cd * this.p.area;
     if (vMag > EPS) { var dv = this.vel.clone().normalize().multiplyScalar(-dragMag / this.p.mass); this.vel.add(dv.multiplyScalar(dt)); }
     this.vel.y -= this.p.g * dt;
+
+    /* TIER 1 FIX: Ground Clipping Prevention
+       Instead of just snapping to y=0 after it dips under, we use linear 
+       interpolation to find the EXACT frame the projectile hit y=0. 
+       This rewinds the X/Z position perfectly to the landing spot, 
+       ensuring it never visually hovers under or inside the ground mesh. */
+    var prevY = this.pos.y;
     this.pos.add(this.vel.clone().multiplyScalar(dt));
 
-    if (this.pos.y <= 0) { this.pos.y = 0; this.state = 'landed'; }
+    if (this.pos.y <= 0 && prevY > 0) {
+        // Calculate exact fraction of dt where y crossed 0
+        var t_hit = prevY / (prevY - this.pos.y);
+        
+        // Rewind position to the exact mathematical landing point
+        this.pos.x -= this.vel.x * dt * (1 - t_hit);
+        this.pos.z -= this.vel.z * dt * (1 - t_hit);
+        this.pos.y = 0;
+        this.state = 'landed';
+    } else if (this.pos.y <= 0 && this.p.h0 === 0) {
+        // Edge case fallback for pure ground launches
+        this.pos.y = 0;
+        this.state = 'landed';
+    }
 
     this._proj.position.copy(this.pos);
     this._setArr(this._vArr, this.vel.clone(), clamp(this.vel.length() / 10, 0.5, 4), this.pos);

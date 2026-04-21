@@ -1,5 +1,5 @@
 /* ============================================================
-   sim-registry.js — Plug-and-Play Simulation Registry
+   sim-registry.js — Textbook-Perfect Camera Presets
    ============================================================ */
 var SIMS = {
     wave:      { Cls: WaveSim,      title: 'Wave Superposition', sub: 'v = fλ  |  Non-dispersive medium', icon: '≈', subtext: 'v = fλ', section: 'Waves & Oscillation' },
@@ -8,18 +8,20 @@ var SIMS = {
     proj:      { Cls: ProjSim,      title: 'Projectile Motion',  sub: 'With Aerodynamic Drag',          icon: '⌒', subtext: 'Quadratic drag', section: 'Kinematics & Dynamics' },
     circular:  { Cls: CircSim,      title: 'Circular Motion',    sub: 'Centripetal Force & Acceleration',icon: '◎', subtext: 'aₓ = ω²r', section: 'Kinematics & Dynamics' },
     collision: { Cls: CollSim,      title: '1D Collisions',      sub: 'Momentum & Restitution',          icon: '⇄', subtext: 'p = mv', section: 'Kinematics & Dynamics' },
-    gravity:   { Cls: GravitySim,   title: 'Orbital Mechanics',  sub: '2-Body Gravity (Velocity Verlet)', icon: '🪐', subtext: 'F = GM₁M₂/r²', section: 'Gravity & Orbits' }
+    gravity:   { Cls: GravitySim,   title: 'Orbital Mechanics',  sub: 'Static Sun (Velocity Verlet)',    icon: '🪐', subtext: 'F = GM₁M₂/r²', section: 'Gravity & Orbits' }
 };
 
-/* ── Textbook-Accurate 2D & 3D Viewport Presets ── */
 var PRESETS = {
     wave:      { '2d': { pos: [0, 0, 28], target: [0, 0, 0] }, '3d': { pos: [0, 10, 28], target: [0, 0, 0] } },
     shm:       { '2d': { pos: [0, 2, 20], target: [0, 2, 0] }, '3d': { pos: [0, 2, 15], target: [0, 2, 0] } },
     pendulum:  { '2d': { pos: [0, 3, 25], target: [0, 3, 0] }, '3d': { pos: [0, 4, 18], target: [0, 3, 0] } },
     proj:      { '2d': { pos: [-10, 15, 60], target: [20, 5, 0] }, '3d': { pos: [-10, 15, 40], target: [20, 5, 0] } },
-    circular:  { '2d': { pos: [0, 0, 40], target: [0, 0, 0] }, '3d': { pos: [0, 15, 22], target: [0, 0, 0] } },
+    
+    /* FIX: Top-down Y-axis view for 2D to show true circles */
+    circular:  { '2d': { pos: [0, 50, 0.1], target: [0, 0, 0] }, '3d': { pos: [0, 15, 22], target: [0, 0, 0] } },
+    gravity:   { '2d': { pos: [0, 50, 0.1], target: [0, 0, 0] }, '3d': { pos: [0, 20, 40], target: [0, 0, 0] } },
+    
     collision: { '2d': { pos: [0, 0, 30], target: [0, 0, 0] }, '3d': { pos: [0, 5, 20], target: [0, 0, 0] } },
-    gravity:   { '2d': { pos: [0, 0, 60], target: [0, 0, 0] }, '3d': { pos: [0, 20, 40], target: [0, 0, 0] } },
     default:   { '2d': { pos: [0, 0, 40], target: [0, 0, 0] }, '3d': { pos: [0, 10, 30], target: [0, 0, 0] } }
 };
 
@@ -42,10 +44,7 @@ window.switchSim=function(key){
     setTimeout(function(){
         var meta=SIMS[key]; 
         var simInstance = new meta.Cls(_engine);
-        
-        /* Inject exact textbook camera presets */
         simInstance.cameraPresets = PRESETS[key] || PRESETS.default;
-        
         _engine.loadSim(simInstance); _curKey=key;
         document.getElementById('sim-title').textContent=meta.title;
         document.getElementById('sim-subtitle').textContent=meta.sub;

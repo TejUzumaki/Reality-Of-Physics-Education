@@ -69,7 +69,7 @@ CircSim.prototype._buildGui = function () {
 };
 
 CircSim.prototype.update = function (t, dt) {
-    SimBase.prototype.update.call(this, t, dt);
+    if (!SimBase.prototype.update.call(this, t, dt)) return;
 
     var th = this.p.omega * this._st;
     var x  = this.p.r * Math.cos(th);

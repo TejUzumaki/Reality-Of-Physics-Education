@@ -146,7 +146,7 @@ WaveSim.prototype._buildGui = function () {
 };
 
 WaveSim.prototype.update = function (t, dt) {
-    SimBase.prototype.update.call(this, t, dt);
+    if (!SimBase.prototype.update.call(this, t, dt)) return;
 
     var p = this.p, tm = this._st, mode = p.mode;
 

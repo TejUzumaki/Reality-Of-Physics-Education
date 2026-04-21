@@ -87,7 +87,7 @@ CollSim.prototype._buildGui = function () {
 };
 
 CollSim.prototype.update = function (t, dt) {
-    SimBase.prototype.update.call(this, t, dt);
+    if (!SimBase.prototype.update.call(this, t, dt)) return;
 
     if (this.state === 'idle') {
         this._s1.position.x = this.x1;

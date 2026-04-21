@@ -1,8 +1,5 @@
 /* ============================================================
-   engine.js — PhySim Core Engine (Blueprint Execution)
-   - True Automatic Global Ghost System (Textbook Strobe)
-   - Smart Orbit Getter (Crash Fix)
-   - 2D/3D Textbook Presets
+   engine.js — PhySim Core Engine (Smartboard & Ghost Fixes)
    ============================================================ */
 'use strict';
 var PI=Math.PI, TAU=PI*2, EPS=1e-9;
@@ -15,7 +12,13 @@ function LabEngine(containerId){
     this.activeSim=null; this.viewMode='2d';
     
     this.renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    
+    /* TIER 1 FIX: Smartboard / 4K Optimization
+       Cap pixel ratio at 1.5 max. Rendering at 2x on a 4K smartboard
+       pushes 8.2 million pixels per frame, causing GPU bottleneck & jitter.
+       1.5x looks sharp but prevents frame drops. */
+    var dpr = window.devicePixelRatio > 1.5 ? 1.5 : window.devicePixelRatio;
+    this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(this.w,this.h);
     this.renderer.setClearColor(0x04070e,1);
     this.renderer.shadowMap.enabled=true;
@@ -84,32 +87,17 @@ LabEngine.prototype.setViewMode=function(mode){
     this.viewMode=mode;
     var sim=this.activeSim;
     var preset=sim&&sim.cameraPresets?sim.cameraPresets[mode]:null;
-
     if(mode==='2d'){
         this.renderer.shadowMap.enabled=false; 
-        if(preset){
-            this.orthoCamera.position.set(...preset.pos);
-            this.orthoOrbit.target.set(...preset.target);
-            this.orthoOrbit.update();
-        } else {
-            this.orthoCamera.position.copy(this.perspCamera.position);
-            this.orthoCamera.quaternion.copy(this.perspCamera.quaternion);
-            this.orthoOrbit.target.copy(this.perspOrbit.target);
-        }
+        if(preset){this.orthoCamera.position.set(...preset.pos);this.orthoOrbit.target.set(...preset.target);this.orthoOrbit.update();}
+        else{this.orthoCamera.position.copy(this.perspCamera.position);this.orthoCamera.quaternion.copy(this.perspCamera.quaternion);this.orthoOrbit.target.copy(this.perspOrbit.target);}
         this._matchOrthoFrustum();
         this.perspOrbit.enabled=false; this.orthoOrbit.enabled=true;
         this.camera=this.orthoCamera;
     } else {
         this.renderer.shadowMap.enabled=true;
-        if(preset){
-            this.perspCamera.position.set(...preset.pos);
-            this.perspOrbit.target.set(...preset.target);
-            this.perspOrbit.update();
-        } else {
-            this.perspCamera.position.copy(this.orthoCamera.position);
-            this.perspCamera.quaternion.copy(this.orthoCamera.quaternion);
-            this.perspOrbit.target.copy(this.orthoOrbit.target);
-        }
+        if(preset){this.perspCamera.position.set(...preset.pos);this.perspOrbit.target.set(...preset.target);this.perspOrbit.update();}
+        else{this.perspCamera.position.copy(this.orthoCamera.position);this.perspCamera.quaternion.copy(this.orthoCamera.quaternion);this.perspOrbit.target.copy(this.orthoOrbit.target);}
         this.orthoOrbit.enabled=false; this.perspOrbit.enabled=true;
         this.camera=this.perspCamera;
     }
@@ -127,7 +115,7 @@ LabEngine.prototype.start=function(){
     (function tick(){
         requestAnimationFrame(tick);
         var dt=clock.getDelta(), t=clock.getElapsedTime();
-        if(dt>0.1) dt=0.1;
+        if(dt > 0.033) dt = 0.033; 
         if(self.viewMode==='2d') self.orthoOrbit.update(); else self.perspOrbit.update();
         if(self.activeSim) self.activeSim.update(t,dt);
         self.renderer.render(self.scene,self.camera);
@@ -138,13 +126,12 @@ LabEngine.prototype.start=function(){
 function SimBase(engine){
     this.engine=engine; this.scene=null; this.camera=null; this.renderer=null;
     this.gui=null; this._objs=[]; this._st=0; this._paused=false;
+    this._mainObject=null; 
+    this._ghosts=[]; this._ghostTimer=0; 
     
-    /* --- TRUE AUTOMATIC GHOST SYSTEM --- */
-    this._mainObject = null; // Sims MUST set this in _setup()
-    this._ghosts=[]; 
-    this._ghostTimer=0; 
-    this._ghostInterval=0.2; // Equal time intervals for textbook strobe
-    this._ghostMax=50;
+    /* TIER 1 FIX: Reduced from 50 to 5 to prevent messy fluttering */
+    this._ghostMax=5; 
+    this._ghostInterval=0.2; 
 }
 SimBase.prototype.build=function(scene,camera,renderer){
     this.scene=scene; this.camera=camera; this.renderer=renderer; this._st=0; this._paused=false;
@@ -164,37 +151,34 @@ SimBase.prototype.build=function(scene,camera,renderer){
 SimBase.prototype._setup=function(){};
 SimBase.prototype._buildGui=function(){};
 
-/* Core update loop now handles Ghosts automatically */
+/* TIER 1 FIX: Return boolean to strictly enforce Global Pause */
 SimBase.prototype.update=function(t,dt){
-    if(!this._paused) {
-        this._st += dt;
-        
-        // If Ghost Mode is on, and a main object is defined, snapshot it
-        if(window._ghostEnabled && this._mainObject) {
-            this._ghostTimer += dt;
-            if(this._ghostTimer >= this._ghostInterval) {
-                this._ghostTimer = 0;
-                var ghost = this._mainObject.clone();
-                // Textbook strobe style: Wireframe white
-                ghost.material = new THREE.MeshBasicMaterial({
-                    color: 0xffffff, wireframe: true, transparent: true, opacity: 0.3
-                });
-                this._add(ghost);
-                this._ghosts.push(ghost);
-                
-                if(this._ghosts.length > this._ghostMax) {
-                    this._ghosts.shift().visible = false;
-                }
+    if(this._paused) return false; // HALT EVERYTHING
+    this._st += dt;
+    
+    if(window._ghostEnabled && this._mainObject) {
+        this._ghostTimer += dt;
+        if(this._ghostTimer >= this._ghostInterval) {
+            this._ghostTimer = 0;
+            var ghost = this._mainObject.clone();
+            ghost.material = new THREE.MeshBasicMaterial({color: 0xffffff, wireframe: true, transparent: true, opacity: 0.3});
+            this._add(ghost);
+            this._ghosts.push(ghost);
+            if(this._ghosts.length > this._ghostMax) {
+                var oldGhost = this._ghosts.shift();
+                this.scene.remove(oldGhost);
+                if(oldGhost.geometry) oldGhost.geometry.dispose();
+                if(oldGhost.material) oldGhost.material.dispose();
+                var idx = this._objs.indexOf(oldGhost);
+                if (idx > -1) this._objs.splice(idx, 1);
             }
         }
     }
+    return true; // ALLOW SIM TO RUN
 };
 
 SimBase.prototype.onResize=function(){};
-SimBase.prototype.reset=function(){
-    this._st=0; 
-    this._clearGhosts();
-};
+SimBase.prototype.reset=function(){ this._st=0; this._clearGhosts(); };
 SimBase.prototype.togglePause=function(){
     this._paused=!this._paused;
     document.getElementById('pause-indicator').style.display=this._paused?'block':'none';
@@ -220,7 +204,9 @@ SimBase.prototype._setArr=function(arrow,dir,len,pos){
     arrow.position.copy(pos);
 };
 SimBase.prototype._clearGhosts=function(){
-    this._ghosts.forEach(function(g){g.visible=false;}); 
-    this._ghosts=[]; 
-    this._ghostTimer=0;
+    this._ghosts.forEach(function(g){
+        this.scene.remove(g); if(g.geometry) g.geometry.dispose(); if(g.material) g.material.dispose();
+        var idx = this._objs.indexOf(g); if (idx > -1) this._objs.splice(idx, 1);
+    }.bind(this)); 
+    this._ghosts=[]; this._ghostTimer=0;
 };

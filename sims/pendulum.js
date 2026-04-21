@@ -74,7 +74,7 @@ PendulumSim.prototype._buildGui = function () {
 
 PendulumSim.prototype.update = function (t, dt) {
     if (this._st === 0) this.reset();
-    SimBase.prototype.update.call(this, t, dt);
+    if (!SimBase.prototype.update.call(this, t, dt)) return;
 
     var L = this.p.L, g = this.p.g, damp = this.p.damping;
 
