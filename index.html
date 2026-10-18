@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PhySim v3.0 — Physics Lab</title>
+<title>ROPE — Reality of Physics Education</title>
+<meta name="description" content="ROPE is an interactive physics laboratory for exploring motion, waves, collisions, oscillations and gravity.">
+<meta name="theme-color" content="#0b0b10">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -12,6 +14,18 @@
 
 <style>
 :root {
+  /* ROPE-RESKIN-2026 */
+  --bg-deep: #0b0b10;
+  --bg-panel: rgba(19, 19, 28, 0.98);
+  --border: rgba(205, 202, 230, 0.12);
+  --border-hi: rgba(167, 153, 230, 0.38);
+  --cyan: #b4a5f5;
+  --lime: #b9c9a3;
+  --orange: #e5ad82;
+  --purple: #b4a5f5;
+  --text: #f0eff7;
+  --muted: rgba(240, 239, 247, 0.68);
+  --dim: rgba(240, 239, 247, 0.40);
   --bg-deep:    #04070e;
   --bg-panel:   rgba(6,12,24,0.97);
   --border:     rgba(255,255,255,0.07);
@@ -206,14 +220,561 @@ body.student-mode #student-hint{display:block}
 .ls-track{width:180px;height:2px;background:rgba(255,255,255,.1);border-radius:1px;overflow:hidden}
 .ls-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--purple));border-radius:1px;animation:lsw 1.2s ease-in-out forwards}
 @keyframes lsw{from{width:0}to{width:100%}}
+
+/* ==========================================================
+   ROPE-RESKIN-2026
+   Visual layer only — existing simulation logic is retained.
+   ========================================================== */
+
+:root {
+  --bg-deep: #0b0b10;
+  --bg-panel: rgba(20, 20, 29, 0.98);
+  --border: rgba(205, 202, 230, 0.13);
+  --border-hi: rgba(180, 165, 245, 0.38);
+  --cyan: #b4a5f5;
+  --lime: #bdcba8;
+  --orange: #e4ad83;
+  --purple: #b4a5f5;
+  --text: #f1eff8;
+  --muted: rgba(241, 239, 248, 0.70);
+  --dim: rgba(241, 239, 248, 0.43);
+  --radius: 16px;
+  --radius-sm: 11px;
+}
+
+html, body {
+  background: #0b0b10;
+  color: var(--text);
+  font-family: "Syne", system-ui, sans-serif;
+}
+
+button, input, select {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid #b4a5f5;
+  outline-offset: 3px;
+}
+
+#app {
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(91, 78, 135, 0.10), transparent 56%),
+    #0b0b10;
+}
+
+#canvas-container {
+  background: transparent;
+}
+
+/* Header: quiet, readable, and more like a scientific instrument. */
+#top-bar {
+  min-height: 76px;
+  padding: 0 clamp(16px, 3vw, 38px);
+  gap: 16px;
+  background: linear-gradient(
+    180deg,
+    rgba(11, 11, 16, 0.98) 0%,
+    rgba(11, 11, 16, 0.82) 70%,
+    transparent 100%
+  );
+}
+
+.tb-logo {
+  color: #c4b8ff;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.tb-dot {
+  width: 8px;
+  height: 8px;
+  background: #b9c9a3;
+  box-shadow: 0 0 0 4px rgba(185, 201, 163, 0.10);
+  animation: none;
+}
+
+.tb-div {
+  background: rgba(205, 202, 230, 0.18);
+}
+
+#sim-title {
+  font-family: "Syne", system-ui, sans-serif;
+  font-size: clamp(16px, 1.5vw, 21px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+#sim-subtitle {
+  font-size: 11px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.035);
+  border-color: var(--border);
+}
+
+#view-badge,
+#mode-badge {
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  border-radius: 10px;
+}
+
+#view-badge {
+  color: #d1c8ff;
+  background: rgba(180, 165, 245, 0.11);
+  border-color: rgba(180, 165, 245, 0.24);
+}
+
+#view-badge.mode-3d {
+  color: #d1c8ff;
+  background: rgba(180, 165, 245, 0.16);
+  border-color: rgba(180, 165, 245, 0.36);
+}
+
+#mode-badge {
+  min-height: 44px;
+  padding: 9px 15px;
+  background: rgba(255, 255, 255, 0.045);
+  border-color: var(--border);
+  color: var(--muted);
+}
+
+#mode-badge.student {
+  color: #d1dcbf;
+  background: rgba(185, 201, 163, 0.10);
+  border-color: rgba(185, 201, 163, 0.27);
+}
+
+/* Main actions: clear controls, generous touch targets. */
+#fab-cluster {
+  right: clamp(14px, 2.5vw, 30px);
+  bottom: clamp(16px, 2.5vh, 28px);
+  gap: 11px;
+}
+
+.fab {
+  box-shadow: 0 5px 22px rgba(0, 0, 0, 0.28);
+}
+
+.fab-main {
+  background: #c0b3fb;
+  color: #171321;
+  box-shadow: 0 7px 24px rgba(0, 0, 0, 0.35);
+}
+
+.fab-main.open {
+  background: #242132;
+  color: #d3caff;
+  border-color: #b4a5f5;
+  box-shadow: 0 0 0 4px rgba(180, 165, 245, 0.09);
+}
+
+.fab-sec {
+  background: rgba(25, 25, 35, 0.98);
+  color: #e2dfed;
+  border-color: rgba(205, 202, 230, 0.17);
+}
+
+.fab-sec.on {
+  background: rgba(180, 165, 245, 0.13);
+  color: #d1c8ff;
+  border-color: rgba(180, 165, 245, 0.40);
+}
+
+.fab-sec.paused {
+  background: rgba(228, 173, 131, 0.12);
+  color: #f0c4a1;
+  border-color: rgba(228, 173, 131, 0.36);
+}
+
+.fab-sec.ghost-on {
+  background: rgba(185, 201, 163, 0.12);
+  color: #d0ddb9;
+  border-color: rgba(185, 201, 163, 0.36);
+}
+
+.fab-lbl {
+  color: #e6e3f0;
+  background: rgba(24, 24, 34, 0.98);
+  border-color: var(--border);
+  font-size: 11px;
+}
+
+/* Experiment picker. */
+#sim-sheet {
+  background: rgba(19, 19, 28, 0.99);
+  border-color: rgba(205, 202, 230, 0.17);
+  border-radius: 18px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.52);
+}
+
+.sh-header {
+  padding: 12px 20px;
+}
+
+.sh-title {
+  color: #c4b8ff;
+  font-size: 12px;
+  letter-spacing: 0.10em;
+}
+
+.sh-close {
+  border-radius: 12px;
+  color: var(--text);
+}
+
+#sim-grid {
+  gap: 9px;
+  padding: 14px 16px 24px;
+}
+
+.grid-sec-label {
+  color: #aaa4c0;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
+.sim-tile {
+  min-height: 68px;
+  gap: 13px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(205, 202, 230, 0.12);
+  border-left: 3px solid transparent;
+  border-radius: 12px;
+}
+
+.sim-tile:hover {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(205, 202, 230, 0.22);
+}
+
+.sim-tile.active {
+  background: rgba(180, 165, 245, 0.085);
+  border-color: rgba(180, 165, 245, 0.28);
+  border-left-color: #b4a5f5;
+}
+
+.st-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border);
+}
+
+.sim-tile.active .st-icon {
+  background: rgba(180, 165, 245, 0.13);
+  border-color: rgba(180, 165, 245, 0.30);
+}
+
+.st-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.sim-tile.active .st-name {
+  color: #d0c7ff;
+}
+
+.st-formula {
+  color: #aaa4bd;
+  font-size: 11px;
+}
+
+.sim-tile.active .st-formula {
+  color: #c3b8ef;
+}
+
+.st-check {
+  background: #c0b3fb;
+  color: #171321;
+}
+
+/* Drawers and analysis panels. */
+.drawer {
+  background: rgba(19, 19, 28, 0.99);
+  border-color: rgba(205, 202, 230, 0.16);
+  border-radius: 17px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.50);
+}
+
+.drawer-hdr {
+  min-height: 68px;
+  height: 68px;
+  padding: 0 18px;
+  border-bottom-color: var(--border);
+}
+
+.drawer-ttl {
+  font-size: 12px;
+  letter-spacing: 0.09em;
+}
+
+.drawer-x {
+  border-radius: 12px;
+  color: var(--text);
+}
+
+.drawer-body {
+  padding: 18px;
+}
+
+#ctrl-drawer .drawer-ttl {
+  color: #c4b8ff;
+}
+
+#info-drawer .drawer-ttl {
+  color: #c4d2ad;
+}
+
+#ctrl-drawer .drawer-body::-webkit-scrollbar-thumb {
+  background: rgba(180, 165, 245, 0.32);
+}
+
+#info-drawer .drawer-body::-webkit-scrollbar-thumb {
+  background: rgba(185, 201, 163, 0.30);
+}
+
+/* Existing dynamically generated lil-gui controls. */
+#gui-container {
+  color: var(--text);
+}
+
+.lil-gui {
+  --background-color: transparent !important;
+  --text-color: #f1eff8 !important;
+  --title-background-color: rgba(180, 165, 245, 0.10) !important;
+  --title-text-color: #c4b8ff !important;
+  --widget-color: rgba(255, 255, 255, 0.07) !important;
+  --hover-color: rgba(255, 255, 255, 0.12) !important;
+  --focus-color: rgba(180, 165, 245, 0.24) !important;
+  --number-color: #c4b8ff !important;
+  --string-color: #e4ad83 !important;
+  --font-family: "Syne", system-ui, sans-serif !important;
+  --font-size: 14px !important;
+}
+
+.lil-gui .title {
+  font-weight: 700;
+}
+
+.lil-gui input {
+  accent-color: #b4a5f5;
+}
+
+/* Loading screen and pause state. */
+#loading-screen {
+  background: #0b0b10;
+}
+
+.ls-logo {
+  color: #c4b8ff;
+  font-family: "Syne", system-ui, sans-serif;
+  font-size: clamp(36px, 7vw, 54px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.rope-mark {
+  color: #c4c0d4;
+  font-size: 0.28em;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  vertical-align: middle;
+}
+
+.ls-fill {
+  background: #b4a5f5;
+}
+
+.ls-tag {
+  color: #b8b2ca;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+#pause-indicator {
+  background: #e4ad83;
+  color: #1c1510;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* Respect reduced-motion settings. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Tablet and phone layouts. */
+@media (max-width: 760px) {
+  :root {
+    --topbar-h: 64px;
+    --touch-sm: 48px;
+    --touch-md: 56px;
+    --touch-lg: 62px;
+  }
+
+  #top-bar {
+    height: 64px;
+    padding: 0 13px;
+    gap: 9px;
+  }
+
+  .tb-logo {
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    gap: 7px;
+  }
+
+  .tb-div {
+    height: 23px;
+  }
+
+  #sim-title {
+    font-size: 14px;
+    line-height: 1.2;
+  }
+
+  #sim-subtitle {
+    display: none;
+  }
+
+  #view-badge {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+
+  #mode-badge {
+    gap: 5px;
+    padding: 7px 9px;
+    min-height: 40px;
+    font-size: 10px;
+  }
+
+  #fab-cluster {
+    right: 13px;
+    bottom: 14px;
+    gap: 8px;
+  }
+
+  .fab-row {
+    gap: 8px;
+  }
+
+  .fab-lbl {
+    font-size: 10px;
+    padding: 5px 9px;
+  }
+
+  #sim-sheet {
+    bottom: 10px;
+    width: calc(100% - 20px);
+    max-height: 78dvh;
+    border-radius: 16px;
+  }
+
+  #sim-grid {
+    padding: 10px 12px 20px;
+  }
+
+  .sim-tile {
+    min-height: 60px;
+    padding: 9px 11px;
+    gap: 10px;
+  }
+
+  .st-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .st-name {
+    font-size: 14px;
+  }
+
+  .st-formula {
+    font-size: 10px;
+  }
+
+  .drawer {
+    top: auto;
+    bottom: 10px;
+    max-height: min(76dvh, 620px);
+    border-radius: 16px;
+  }
+
+  #ctrl-drawer,
+  #info-drawer {
+    left: 10px;
+    right: 10px;
+    width: auto;
+    transform: translateY(calc(100% + 30px));
+  }
+
+  #ctrl-drawer.open,
+  #info-drawer.open {
+    transform: translateY(0);
+  }
+
+  .drawer-hdr {
+    height: 58px;
+    min-height: 58px;
+  }
+
+  .drawer-body {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  #top-bar {
+    gap: 7px;
+    padding: 0 9px;
+  }
+
+  .tb-logo {
+    font-size: 12px;
+    gap: 5px;
+  }
+
+  .tb-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  #sim-title {
+    max-width: 34vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #mode-badge {
+    padding: 6px 7px;
+    font-size: 9px;
+  }
+}
+
 </style>
 </head>
 <body>
 
 <div id="loading-screen">
-  <div class="ls-logo">PHYSIM</div>
+  <div class="ls-logo">ROPE<span class="rope-mark"> / LAB</span></div>
   <div class="ls-track"><div class="ls-fill"></div></div>
-  <div class="ls-tag">High Fidelity Physics Lab</div>
+  <div class="ls-tag">See Physics. Understand Reality.</div>
 </div>
 
 <div id="info-overlay" class="hidden" style="display:none;"></div>
@@ -223,7 +784,7 @@ body.student-mode #student-hint{display:block}
   <div id="canvas-container"></div>
 
   <div id="top-bar">
-    <div class="tb-logo"><div class="tb-dot"></div>PHYSIM</div>
+    <div class="tb-logo"><div class="tb-dot"></div>ROPE</div>
     <div class="tb-div"></div>
     <div id="sim-title">—</div>
     <div id="sim-subtitle">—</div>

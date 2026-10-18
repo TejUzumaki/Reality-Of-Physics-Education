@@ -1,5 +1,5 @@
 /* ============================================================
-   engine.js — PhySim Core Engine (Smartboard & Ghost Fixes)
+   engine.js — ROPE Core Engine (Smartboard & Ghost Fixes)
    ============================================================ */
 'use strict';
 var PI=Math.PI, TAU=PI*2, EPS=1e-9;
@@ -20,7 +20,7 @@ function LabEngine(containerId){
     var dpr = window.devicePixelRatio > 1.5 ? 1.5 : window.devicePixelRatio;
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(this.w,this.h);
-    this.renderer.setClearColor(0x04070e,1);
+    this.renderer.setClearColor(0x0b0b10,1);
     this.renderer.shadowMap.enabled=true;
     this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     this.el.appendChild(this.renderer.domElement);
@@ -29,7 +29,7 @@ function LabEngine(containerId){
     this.renderer.domElement.addEventListener('gesturestart',function(e){e.preventDefault()});
 
     this.scene=new THREE.Scene();
-    this.scene.fog=new THREE.FogExp2(0x04070e,0.012);
+    this.scene.fog=new THREE.FogExp2(0x0b0b10,0.012);
 
     this.perspCamera=new THREE.PerspectiveCamera(45,this.w/this.h,0.1,1000);
     this.perspCamera.position.set(0,10,30);
@@ -142,8 +142,8 @@ SimBase.prototype.build=function(scene,camera,renderer){
     document.getElementById('formula-container').innerHTML='';
     document.getElementById('live-values').innerHTML='';
     document.getElementById('info-overlay').classList.remove('hidden');
-    this.scene.fog=new THREE.FogExp2(0x04070e,0.012);
-    this.renderer.setClearColor(0x04070e,1);
+    this.scene.fog=new THREE.FogExp2(0x0b0b10,0.012);
+    this.renderer.setClearColor(0x0b0b10,1);
     this.engine.ambientLight.color.set(0x1a2a4a);
     this.engine.ambientLight.intensity=1.8;
     this._setup(); this._buildGui();
