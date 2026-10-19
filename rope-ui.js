@@ -371,3 +371,75 @@
     initialise();
   }
 })();
+
+/* ROPE edge-aware simulation controls */
+(function installEdgeAwareControls() {
+  function install() {
+    var originalToggle = window.toggleCtrl;
+    var drawer = document.getElementById("ctrl-drawer");
+    if (!drawer || typeof originalToggle !== "function") return;
+
+    if (window.__ropeEdgeControlsInstalled) return;
+    window.__ropeEdgeControlsInstalled = true;
+
+    function getSelectedSide() {
+      var panel = document.getElementById("rope-control-panel");
+      if (!panel) return "right";
+
+      if (panel.classList.contains("from-left")) return "left";
+      if (panel.classList.contains("from-bottom")) return "bottom";
+      return "right";
+    }
+
+    function applyDrawerPosition() {
+      drawer.classList.remove(
+        "rope-controls-from-left",
+        "rope-controls-from-right",
+        "rope-controls-from-bottom"
+      );
+
+      var side = getSelectedSide();
+      drawer.classList.add("rope-controls-from-" + side);
+      drawer.dataset.ropeEdge = side;
+    }
+
+    window.toggleCtrl = function () {
+      originalToggle.apply(this, arguments);
+
+      if (drawer.classList.contains("open")) {
+        applyDrawerPosition();
+      }
+    };
+
+    var originalClose = window.closeCtrl;
+
+    if (typeof originalClose === "function") {
+      window.closeCtrl = function () {
+        originalClose.apply(this, arguments);
+        drawer.classList.remove(
+          "rope-controls-from-left",
+          "rope-controls-from-right",
+          "rope-controls-from-bottom"
+        );
+        delete drawer.dataset.ropeEdge;
+      };
+    }
+
+    /* Keep the drawer aligned if the user changes its edge while open. */
+    document.querySelectorAll(".rope-edge-tab").forEach(function (tab) {
+      tab.addEventListener("click", function () {
+        if (drawer.classList.contains("open")) {
+          window.setTimeout(applyDrawerPosition, 0);
+        }
+      });
+    });
+
+    console.info("ROPE: edge-aware simulation controls installed.");
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", install, { once: true });
+  } else {
+    install();
+  }
+})();

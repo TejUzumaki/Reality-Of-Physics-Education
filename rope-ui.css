@@ -273,3 +273,184 @@ body.rope-sheet-open #backdrop {
   #rope-control-panel, #sim-sheet { transition-duration: .01ms !important; }
   #loading-screen .ls-fill { animation: none !important; }
 }
+
+/* =========================================================
+   ROPE UPDATE — ordered simulation library
+   ========================================================= */
+
+#sim-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-content: start !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  padding: 16px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+#sim-grid > .grid-sec-label {
+  grid-column: 1 / -1 !important;
+  width: auto !important;
+  margin: 8px 0 0 !important;
+  padding: 8px 2px 4px !important;
+  border-bottom: 1px solid rgba(255,255,255,.12);
+  font-size: 10px !important;
+  line-height: 1.5 !important;
+  letter-spacing: .12em !important;
+}
+
+#sim-grid > .grid-sec-label:first-child {
+  margin-top: 0 !important;
+}
+
+#sim-grid > .sim-tile {
+  display: flex !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 76px !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 11px !important;
+  border-radius: 12px !important;
+  text-align: left !important;
+}
+
+#sim-grid .st-icon {
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#sim-grid .st-icon svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+#sim-grid .st-text {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+#sim-grid .st-name {
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  overflow-wrap: anywhere !important;
+}
+
+#sim-grid .st-formula {
+  display: block !important;
+  margin-top: 4px !important;
+  font-size: 10px !important;
+  line-height: 1.4 !important;
+  overflow-wrap: anywhere !important;
+}
+
+#sim-grid .st-check {
+  flex: 0 0 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+}
+
+@media (max-width: 380px) {
+  #sim-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    padding: 12px !important;
+  }
+
+  #sim-grid > .sim-tile {
+    min-height: 66px !important;
+  }
+}
+
+/* =========================================================
+   ROPE UPDATE — simulation controls follow selected edge
+   ========================================================= */
+
+/* Side-opened control drawers */
+#ctrl-drawer.rope-controls-from-left {
+  top: 50% !important;
+  left: 12px !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: min(340px, calc(100vw - 100px)) !important;
+  max-height: min(78dvh, 620px) !important;
+  transform: translateY(-50%) !important;
+  border-radius: 14px !important;
+  z-index: 835 !important;
+}
+
+#ctrl-drawer.rope-controls-from-right {
+  top: 50% !important;
+  right: 12px !important;
+  left: auto !important;
+  bottom: auto !important;
+  width: min(340px, calc(100vw - 100px)) !important;
+  max-height: min(78dvh, 620px) !important;
+  transform: translateY(-50%) !important;
+  border-radius: 14px !important;
+  z-index: 835 !important;
+}
+
+/* Bottom-opened controls become a horizontally scrollable strip */
+#ctrl-drawer.rope-controls-from-bottom {
+  top: auto !important;
+  bottom: max(28px, env(safe-area-inset-bottom)) !important;
+  left: 50% !important;
+  right: auto !important;
+  width: min(900px, calc(100vw - 28px)) !important;
+  max-width: calc(100vw - 28px) !important;
+  max-height: min(42dvh, 280px) !important;
+  transform: translateX(-50%) !important;
+  border-radius: 14px !important;
+  z-index: 835 !important;
+}
+
+#ctrl-drawer.rope-controls-from-bottom .drawer-hdr {
+  flex: 0 0 auto !important;
+  padding: 10px 12px !important;
+}
+
+#ctrl-drawer.rope-controls-from-bottom .drawer-body {
+  min-height: 0 !important;
+  overflow: auto !important;
+}
+
+#ctrl-drawer.rope-controls-from-bottom #gui-container {
+  min-width: max-content !important;
+  width: max-content !important;
+  max-width: none !important;
+}
+
+/* Keep controls readable and prevent the drawer from overflowing */
+#ctrl-drawer.rope-controls-from-left .drawer-body,
+#ctrl-drawer.rope-controls-from-right .drawer-body {
+  overflow: auto !important;
+  min-height: 0 !important;
+}
+
+#ctrl-drawer.rope-controls-from-left #gui-container,
+#ctrl-drawer.rope-controls-from-right #gui-container {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 520px) {
+  #ctrl-drawer.rope-controls-from-left,
+  #ctrl-drawer.rope-controls-from-right {
+    width: min(300px, calc(100vw - 78px)) !important;
+    max-height: 75dvh !important;
+  }
+
+  #ctrl-drawer.rope-controls-from-bottom {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    bottom: max(24px, env(safe-area-inset-bottom)) !important;
+  }
+}
