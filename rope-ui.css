@@ -454,3 +454,20 @@ body.rope-sheet-open #backdrop {
     bottom: max(24px, env(safe-area-inset-bottom)) !important;
   }
 }
+
+/* Fix: keep simulation list icons white */
+#sim-grid .st-icon,
+#sim-grid .st-icon svg,
+#sim-grid .st-icon svg path,
+#sim-grid .st-icon svg line,
+#sim-grid .st-icon svg circle,
+#sim-grid .st-icon svg polyline,
+#sim-grid .st-icon svg polygon {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  fill: none;
+}
+
+#sim-grid .st-icon svg [fill]:not([fill="none"]) {
+  fill: #ffffff !important;
+}
