@@ -10,7 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.17/dist/lil-gui.umd.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
 :root {
@@ -768,11 +768,14 @@ select:focus-visible {
 }
 
 </style>
+<link rel="stylesheet" href="rope-ui.css?v=20261019">
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 </head>
 <body>
 
 <div id="loading-screen">
   <div class="ls-logo">ROPE<span class="rope-mark"> / LAB</span></div>
+  <div class="ls-expansion" data-text="REALITY OF PHYSICS EDUCATION">REALITY OF PHYSICS EDUCATION</div>
   <div class="ls-track"><div class="ls-fill"></div></div>
   <div class="ls-tag">See Physics. Understand Reality.</div>
 </div>
@@ -953,5 +956,6 @@ window.toggleOverlay=toggleAnalysis;
 <script src="sims/collision.js"></script>
 <script src="sims/gravity.js"></script>
 <script src="sim-registry.js"></script>
+<script src="rope-ui.js?v=20261019"></script>
 </body>
 </html>

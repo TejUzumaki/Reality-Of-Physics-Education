@@ -60,5 +60,5 @@ window.addEventListener('DOMContentLoaded',function(){
     _engine=new LabEngine('canvas-container'); _engine.start();
     _curKey=null; switchSim(Object.keys(SIMS)[0]);
     updateViewModeUI();
-    setTimeout(function(){var ls=document.getElementById('loading-screen');if(ls){ls.classList.add('fade-out');setTimeout(function(){ls.style.display='none'},600)}},1100);
+    setTimeout(function(){var ls=document.getElementById('loading-screen');if(ls){ls.classList.add('fade-out');setTimeout(function(){ls.style.display='none'},600)}},4000);
 });

@@ -1,0 +1,275 @@
+/* =========================================================
+   R.O.P.E. — monochrome UI and edge-connected controls
+   Existing engine, simulations and action handlers are kept.
+   ========================================================= */
+:root {
+  --rope-bg: #0b0b0b;
+  --rope-panel: rgba(20,20,20,.98);
+  --rope-border: rgba(255,255,255,.14);
+  --rope-text: #f2f2f2;
+  --rope-muted: #999;
+  --rope-dim: #737373;
+}
+
+/* Monochrome reskin overrides the original accent palette. */
+html, body { background: #0b0b0b !important; color: #eee !important; }
+#top-bar { background: linear-gradient(180deg,rgba(8,8,8,.97),rgba(8,8,8,.35),transparent) !important; }
+.tb-logo, #sim-title, .sh-title, .drawer-ttl, .grid-sec-label,
+.st-name, .st-formula, #sim-subtitle, #view-badge, #mode-badge,
+#sim-sheet, .drawer { color: #eee !important; }
+.tb-dot { background: #ddd !important; box-shadow: none !important; }
+#view-badge, #view-badge.mode-3d, #mode-badge, #mode-badge.student,
+.sh-title, .sim-tile.active .st-name, .sim-tile.active .st-formula,
+#ctrl-drawer .drawer-ttl, #info-drawer .drawer-ttl {
+  color: #eee !important;
+  background: rgba(255,255,255,.055) !important;
+  border-color: var(--rope-border) !important;
+}
+#pause-indicator { background: #eee !important; color: #111 !important; box-shadow: none !important; }
+#sim-sheet, .drawer { background: rgba(18,18,18,.985) !important; border-color: var(--rope-border) !important; }
+.sim-tile, #sim-sheet .sim-tile { background: #191919 !important; border-color: rgba(255,255,255,.12) !important; }
+.sim-tile.active, #sim-sheet .sim-tile.active { background: #242424 !important; border-color: rgba(255,255,255,.36) !important; }
+.st-icon, .sim-tile.active .st-icon { background: #222 !important; border-color: var(--rope-border) !important; }
+.st-check { background: #eee !important; color: #111 !important; }
+.lil-gui { --title-background-color: rgba(255,255,255,.07) !important; --title-text-color: #eee !important; --number-color: #eee !important; --string-color: #ddd !important; --focus-color: rgba(255,255,255,.18) !important; }
+
+/* The old FAB cluster remains only as a source for its original action rows. */
+#fab-cluster {
+  position: fixed !important;
+  inset: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  pointer-events: none !important;
+  z-index: 700 !important;
+  display: block !important;
+  opacity: 1 !important;
+}
+#fab-cluster #fab-main { display: none !important; }
+
+/* Panel's class names match rope-ui.js exactly. */
+#rope-control-panel {
+  position: fixed;
+  z-index: 810;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-sizing: border-box;
+  padding: 10px 8px;
+  color: var(--rope-text);
+  background: rgba(17,17,17,.985);
+  border: 1px solid var(--rope-border);
+  box-shadow: 0 12px 36px rgba(0,0,0,.45);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform .22s ease, opacity .18s ease, visibility .18s ease;
+}
+#rope-control-panel.open { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* Panels are physically flush to the chosen screen edge. */
+#rope-control-panel.from-left {
+  top: 50%; left: 0; right: auto; bottom: auto;
+  width: 94px; max-height: calc(100dvh - 20px);
+  overflow-x: hidden; overflow-y: auto;
+  flex-direction: column; justify-content: center;
+  border-left: 0; border-radius: 0 14px 14px 0;
+  transform: translate(-102%,-50%);
+}
+#rope-control-panel.from-left.open { transform: translate(0,-50%); }
+#rope-control-panel.from-right {
+  top: 50%; right: 0; left: auto; bottom: auto;
+  width: 94px; max-height: calc(100dvh - 20px);
+  overflow-x: hidden; overflow-y: auto;
+  flex-direction: column; justify-content: center;
+  border-right: 0; border-radius: 14px 0 0 14px;
+  transform: translate(102%,-50%);
+}
+#rope-control-panel.from-right.open { transform: translate(0,-50%); }
+#rope-control-panel.from-bottom {
+  left: 50%; right: auto; top: auto;
+  bottom: max(0px, env(safe-area-inset-bottom));
+  max-width: calc(100vw - 24px); max-height: 115px;
+  overflow-x: auto; overflow-y: hidden;
+  flex-direction: row; justify-content: flex-start;
+  border-bottom: 0; border-radius: 14px 14px 0 0;
+  transform: translate(-50%,120%);
+}
+#rope-control-panel.from-bottom.open { transform: translate(-50%,0); }
+
+.rope-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 6px; flex-shrink: 0;
+}
+.from-left .rope-panel-header, .from-right .rope-panel-header {
+  width: 100%; flex-direction: column; padding-bottom: 7px;
+  border-bottom: 1px solid var(--rope-border);
+}
+.from-bottom .rope-panel-header {
+  min-width: 56px; flex-direction: column; padding-right: 7px;
+  border-right: 1px solid var(--rope-border);
+}
+.rope-panel-title {
+  color: #f0f0f0; font: 700 9px/1.35 "IBM Plex Mono", monospace;
+  letter-spacing: .07em; text-align: center;
+}
+.rope-panel-close {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 27px; padding: 0;
+  border: 1px solid var(--rope-border); border-radius: 8px;
+  background: #202020; color: #ddd; cursor: pointer;
+}
+.rope-panel-close svg { display: block; width: 15px; height: 15px; }
+
+/* Fixed-size control cells make every icon and label share one column. */
+#rope-control-panel .fab-row {
+  position: relative !important;
+  display: flex !important; flex: 0 0 auto;
+  flex-direction: column !important; align-items: center !important;
+  justify-content: center !important; gap: 5px !important;
+  width: 76px !important; min-width: 0 !important; height: auto !important;
+  padding: 6px 2px !important; margin: 0 !important;
+  box-sizing: border-box; border-radius: 9px;
+  opacity: 1 !important; visibility: visible !important;
+  transform: none !important; pointer-events: auto !important;
+}
+#rope-control-panel.from-bottom .fab-row { width: 64px !important; }
+#rope-control-panel .fab-row:hover { background: rgba(255,255,255,.045); }
+#rope-control-panel .fab-lbl {
+  position: static !important; display: block !important;
+  width: 100% !important; max-width: 100% !important;
+  padding: 0 !important; margin: 0 !important;
+  color: #bdbdbd !important; background: transparent !important;
+  border: 0 !important; box-shadow: none !important;
+  font: 500 9px/1.25 "DM Sans",sans-serif !important;
+  letter-spacing: 0 !important; text-align: center !important;
+  white-space: normal !important; overflow-wrap: anywhere;
+  opacity: 1 !important; visibility: visible !important;
+  transform: none !important; pointer-events: none !important;
+}
+#rope-control-panel .fab {
+  position: relative !important; inset: auto !important;
+  display: inline-flex !important; align-items: center !important;
+  justify-content: center !important; flex: 0 0 39px !important;
+  width: 39px !important; min-width: 39px !important; height: 39px !important;
+  padding: 0 !important; margin: 0 !important;
+  border: 1px solid var(--rope-border) !important;
+  border-radius: 11px !important; background: #202020 !important;
+  color: #eee !important; box-shadow: none !important;
+  font-size: 0 !important; line-height: 1 !important;
+  opacity: 1 !important; visibility: visible !important;
+  transform: none !important; pointer-events: auto !important; cursor: pointer;
+}
+#rope-control-panel .fab svg { display: block; width: 18px; height: 18px; stroke-width: 1.7; }
+#rope-control-panel .fab:hover,
+#rope-control-panel .fab.on,
+#rope-control-panel .fab.ghost-on,
+#rope-control-panel .fab.paused {
+  background: #303030 !important; border-color: rgba(255,255,255,.4) !important;
+}
+#rope-control-panel .fab:focus-visible, .rope-edge-tab:focus-visible,
+.rope-panel-close:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+/* Small grab tabs are always visible in both Teacher and Student mode. */
+.rope-edge-tab {
+  position: fixed; z-index: 820;
+  display: flex; align-items: center; justify-content: center;
+  width: 21px; height: 64px; padding: 0;
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(25,25,25,.96); color: #eee;
+  box-shadow: 0 3px 16px rgba(0,0,0,.28);
+  cursor: pointer; pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+.rope-edge-tab svg { display: block; width: 15px; height: 15px; stroke-width: 1.8; }
+#rope-tab-left { left: 0; top: 50%; transform: translateY(-50%); border-left: 0; border-radius: 0 9px 9px 0; }
+#rope-tab-right { right: 0; top: 50%; transform: translateY(-50%); border-right: 0; border-radius: 9px 0 0 9px; }
+#rope-tab-bottom { left: 50%; bottom: 0; width: 64px; height: 20px; transform: translateX(-50%); border-bottom: 0; border-radius: 9px 9px 0 0; }
+body.student-mode #rope-tab-left,
+body.student-mode #rope-tab-right,
+body.student-mode #rope-tab-bottom { display: flex !important; opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; }
+
+/* Centred experiment chooser, with a real dimming backdrop. */
+#backdrop { display: none; }
+body.rope-sheet-open #backdrop {
+  display: block !important; position: fixed !important; inset: 0 !important;
+  z-index: 840 !important; background: rgba(0,0,0,.68) !important;
+  opacity: 1 !important; visibility: visible !important; pointer-events: auto !important;
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+}
+#sim-sheet {
+  position: fixed !important; z-index: 850 !important;
+  top: 50% !important; left: 50% !important; right: auto !important; bottom: auto !important;
+  width: min(680px,calc(100vw - 36px)) !important;
+  max-height: min(78dvh,680px) !important; overflow: hidden !important;
+  border: 1px solid var(--rope-border) !important; border-radius: 17px !important;
+  background: #141414 !important; box-shadow: 0 25px 100px rgba(0,0,0,.68) !important;
+  opacity: 0 !important; visibility: hidden !important; pointer-events: none !important;
+  transform: translate(-50%,-46%) scale(.97) !important;
+  transition: opacity .2s ease, transform .2s ease, visibility .2s ease !important;
+}
+#sim-sheet.open {
+  opacity: 1 !important; visibility: visible !important; pointer-events: auto !important;
+  transform: translate(-50%,-50%) scale(1) !important;
+}
+#sim-grid {
+  display: grid !important; grid-template-columns: repeat(auto-fit,minmax(145px,1fr)) !important;
+  gap: 9px !important; padding: 12px !important; overflow-y: auto !important;
+}
+#sim-sheet .sim-tile { min-width: 0; background: #1b1b1b !important; border: 1px solid var(--rope-border) !important; border-radius: 11px !important; }
+#sim-sheet .sim-tile.active { border-color: rgba(255,255,255,.55) !important; background: #252525 !important; }
+#sim-sheet .st-name { color: #f0f0f0 !important; }
+#sim-sheet .st-formula, #sim-sheet .grid-sec-label { color: #999 !important; }
+
+/* Four-second progress reveal: both line and full-form text progress together. */
+#loading-screen { background: #0b0b0b !important; gap: 13px !important; }
+#loading-screen .ls-logo {
+  color: #f5f5f5 !important; font-family: "IBM Plex Mono",monospace !important;
+  font-size: clamp(32px,7vw,44px) !important; font-weight: 700 !important;
+  letter-spacing: .12em !important; margin: 0 !important;
+}
+#loading-screen .rope-letter { display: inline-block; animation: rope-letter-in .35s ease both; }
+@keyframes rope-letter-in { from { opacity: .15; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+#loading-screen .ls-expansion {
+  color: transparent !important;
+  background: linear-gradient(90deg,#f2f2f2 0%,#f2f2f2 var(--rope-progress,0%),#777 var(--rope-progress,0%),#777 100%);
+  -webkit-background-clip: text; background-clip: text;
+  font: 500 clamp(8px,1.75vw,10px)/1.5 "DM Sans",sans-serif !important;
+  letter-spacing: .13em !important; text-align: center !important;
+  margin: -7px 0 0 !important; white-space: nowrap;
+}
+#loading-screen .ls-track {
+  width: min(250px,62vw) !important; height: 3px !important;
+  margin-top: 13px !important; overflow: hidden !important;
+  border-radius: 0 !important; background: #292929 !important;
+}
+#loading-screen .ls-fill {
+  width: 0%; height: 100% !important; background: #f5f5f5 !important;
+  border-radius: 0 !important; animation: none !important;
+}
+#loading-screen .ls-tag {
+  color: #ddd !important; font: 500 11px/1.4 "DM Sans",sans-serif !important;
+  letter-spacing: .025em !important; text-transform: none !important; margin-top: 4px !important;
+}
+
+@media (max-width: 520px) {
+  #rope-control-panel.from-left, #rope-control-panel.from-right { width: 86px; gap: 3px; padding: 7px 3px; }
+  #rope-control-panel .fab-row { width: 72px !important; padding: 5px 1px !important; }
+  #rope-control-panel .fab { flex-basis: 35px !important; width: 35px !important; min-width: 35px !important; height: 35px !important; }
+  #rope-control-panel .fab svg { width: 16px; height: 16px; }
+  #rope-control-panel .fab-lbl { font-size: 8px !important; }
+  #sim-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+  #loading-screen .ls-expansion { letter-spacing: .07em !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #rope-control-panel, #sim-sheet { transition-duration: .01ms !important; }
+  #loading-screen .ls-fill { animation: none !important; }
+}
