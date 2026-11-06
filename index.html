@@ -906,6 +906,11 @@ function resetSim(){
 function toggleGhost(){
   window._ghostEnabled=!window._ghostEnabled;
   document.getElementById('fab-ghost').classList.toggle('ghost-on',window._ghostEnabled);
+  /* FIX: when ghost trail is turned OFF, immediately clear all existing ghosts
+     from the active sim so they don't linger on screen. */
+  if(!window._ghostEnabled && window._engine && window._engine.activeSim){
+    window._engine.activeSim._clearGhosts();
+  }
 }
 
 function toggleViewMode(){
