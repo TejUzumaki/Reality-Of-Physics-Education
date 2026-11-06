@@ -1,0 +1,36 @@
+# R.O.P.E. — Reality of Physics Education
+# https://ropextej.vercel.app/
+
+User-agent: *
+Allow: /
+
+# Explicitly allow major search engine crawlers
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+# Block nothing — this is a public educational tool.
+# JS, CSS, image and font assets are required for proper rendering and indexing.
+
+# Polite crawl delay
+Crawl-delay: 1
+
+# Sitemap location — Google reads this line and discovers the sitemap automatically
+Sitemap: https://ropextej.vercel.app/sitemap.xml

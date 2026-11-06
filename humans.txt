@@ -1,0 +1,17 @@
+/* R.O.P.E. — Reality of Physics Education */
+/* https://ropextej.vercel.app/ */
+
+/* TEAM */
+Developer & Creator: Tejas Gafat
+GitHub: https://github.com/TejUzumaki
+Role: Full-stack development, physics engine, 3D rendering, UI/UX design
+
+/* THANKS */
+Three.js (https://threejs.org) — 3D rendering engine
+lil-gui (https://lil-gui.georgealways.com) — Parameter controls
+Lucide (https://lucide.dev) — Interface icons
+
+/* SITE */
+Last update: 2026-11-06
+Standards: HTML5, CSS3, JavaScript (ES6+), WebGL
+Software: Three.js r128, lil-gui, Lucide
